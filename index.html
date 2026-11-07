@@ -1,0 +1,618 @@
+<!doctype html>
+<!--
+  Enrich — post-delivery uniform survey (Aynivra Digital)
+  Host this file the same way as the sizing form (same site/repo), and paste the Apps Script
+  Web App URL into ENDPOINT below. While ENDPOINT is the placeholder, the form runs in DEMO mode:
+  nothing is sent, and the thank-you screen shows what would have been saved.
+
+  TO CUSTOMISE THE BANNER: edit only the block marked "BANNER SETTINGS" in the <script> below,
+  and (optionally) the colours in the "BRAND COLOURS" block in <style>.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Enrich — Uniform post-delivery survey</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ===================== BRAND COLOURS (customise) ===================== */
+  :root{
+    --banner-bg:#1A1A1A;      /* banner background colour */
+    --banner-text:#FFFFFF;    /* banner title colour */
+    --banner-muted:#C9C9CE;   /* banner subtitle and tagline colour */
+    --accent:#E6003D;         /* Enrich red: buttons, heart, highlights */
+    --accent-dark:#C10033;    /* button hover */
+    --logo-bg:#FFFFFF;        /* background of the white strip that holds the logo */
+  /* ===================================================================== */
+    --ink:#1A1A1A; --paper:#FFFFFF; --wash:#F6F6F7; --line:#E4E4E7; --muted:#6B6B70;
+    --err:#C10033; --errwash:#FFF2F5; --ok:#1F7A4D;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--wash);color:var(--ink);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:560px;margin:0 auto;min-height:100vh;background:var(--paper)}
+  [hidden]{display:none!important}
+
+  /* banner */
+  header{background:var(--banner-bg) center/cover no-repeat;color:var(--banner-text);padding:26px 22px 24px;position:relative;overflow:hidden}
+  header.has-image{min-height:150px}
+  .brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .brand img{display:block;width:auto}
+  .logobar{background:var(--logo-bg);padding:18px 22px;text-align:center}
+  .logobar img{display:inline-block;width:auto;max-width:100%}
+  .wordmark{font-family:Poppins,sans-serif;font-weight:700;font-size:30px;letter-spacing:-.01em;line-height:1}
+  .wordmark b{color:var(--accent)}
+  .tagline{font-size:13px;color:var(--banner-muted)}
+  header h1{font-family:Poppins,sans-serif;font-size:26px;font-weight:600;line-height:1.2;margin-top:18px}
+  .brand[hidden] + h1{margin-top:0}
+  header p{font-size:14px;color:var(--banner-muted);margin-top:8px;line-height:1.55}
+  .rule{width:48px;height:4px;border-radius:2px;background:var(--accent);margin-top:16px}
+
+  main{padding:22px 20px 8px}
+  .card{border:1px solid var(--line);border-radius:12px;padding:18px 16px;margin-bottom:14px;background:#fff}
+  .card.err{border-color:var(--err);background:var(--errwash)}
+  .qn{font-family:Poppins,sans-serif;font-size:12px;font-weight:600;color:var(--accent);letter-spacing:.04em;margin-bottom:4px}
+  .qt{font-size:15.5px;font-weight:600;line-height:1.4}
+  .qt .req{color:var(--err)}
+  .help{font-size:12.5px;color:var(--muted);margin-top:4px;line-height:1.5}
+  .ctl{margin-top:12px}
+  .errmsg{display:none;font-size:12.5px;color:var(--err);margin-top:10px;font-weight:500}
+  .card.err .errmsg{display:block}
+  .sectitle{font-family:Poppins,sans-serif;font-size:16px;font-weight:600;margin:20px 0 10px;display:flex;align-items:center;gap:8px}
+  .sectitle:before{content:'';width:4px;height:18px;border-radius:2px;background:var(--accent)}
+
+  select{width:100%;padding:12px 40px 12px 13px;border:1px solid var(--line);border-radius:9px;font:inherit;font-size:16px;color:var(--ink);background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%231A1A1A' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 14px center;-webkit-appearance:none;appearance:none}
+  select:disabled{background-color:var(--wash);color:var(--muted)}
+  select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(230,0,61,.12)}
+  input[type=text],input[type=tel],textarea{width:100%;padding:12px 13px;border:1px solid var(--line);border-radius:9px;font:inherit;font-size:16px;color:var(--ink);background:#fff}
+  textarea{resize:vertical;min-height:76px}
+  input[type=tel]:focus,input:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(230,0,61,.12)}
+  .field + .field{margin-top:12px}
+  label.lab{display:block;font-size:12.5px;color:var(--muted);font-weight:500;margin-bottom:6px}
+
+  .opts{display:grid;gap:8px}
+  .opt{display:flex;align-items:center;gap:12px;padding:13px 14px;border:1.5px solid var(--line);border-radius:10px;cursor:pointer;font-size:15px;min-height:48px}
+  .opt input{width:19px;height:19px;accent-color:var(--accent);margin:0;flex:none}
+  .opt:has(input:checked){border-color:var(--accent);background:#FFF5F8}
+  .reveal{margin:2px 0 6px 0;padding:0 0 4px 0}
+  .reveal textarea{margin-top:6px}
+
+  .scale{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+  .scale label{display:flex;align-items:center;justify-content:center;height:48px;border:1.5px solid var(--line);border-radius:10px;font-family:Poppins,sans-serif;font-weight:600;font-size:17px;cursor:pointer}
+  .scale input{position:absolute;opacity:0;pointer-events:none}
+  .scale label:has(input:checked){background:var(--ink);border-color:var(--ink);color:#fff}
+  .scale-ends{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-top:6px}
+
+  .up{display:inline-flex;align-items:center;gap:8px;padding:11px 16px;border:1.5px solid var(--ink);border-radius:9px;font-weight:600;font-size:14px;cursor:pointer;background:#fff}
+  .up input{display:none}
+  .files{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .thumb{position:relative;width:76px;height:76px;border-radius:9px;overflow:hidden;border:1px solid var(--line);background:var(--wash);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted);text-align:center;padding:4px}
+  .thumb img{width:100%;height:100%;object-fit:cover}
+  .thumb button{position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(0,0,0,.65);color:#fff;font-size:13px;line-height:22px;cursor:pointer}
+  .limit{font-size:11.5px;color:var(--muted);margin-top:8px}
+  .note{font-size:13px;color:var(--ok);background:#EEF7F2;border-radius:9px;padding:10px 12px}
+
+  .btn{width:100%;padding:15px;background:var(--accent);color:#fff;border:0;border-radius:10px;font:600 15px Inter,sans-serif;letter-spacing:.02em;cursor:pointer}
+  .btn:hover:not(:disabled){background:var(--accent-dark)}
+  .btn:disabled{opacity:.6;cursor:wait}
+  .hint{font-size:12px;color:var(--muted);text-align:center;margin-top:10px;line-height:1.5}
+  .senderr{font-size:13px;color:var(--err);background:var(--errwash);border-radius:9px;padding:10px 12px;margin-bottom:12px}
+
+  #done{padding:56px 22px 40px;text-align:center}
+  #done .tick{width:56px;height:56px;border-radius:50%;background:var(--ok);color:#fff;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;font-size:28px}
+  #done h2{font-family:Poppins,sans-serif;font-size:24px;font-weight:600;margin-bottom:10px}
+  #done p{font-size:14.5px;color:var(--muted);line-height:1.6;max-width:360px;margin:0 auto}
+  #done .ref{margin-top:18px;font-size:13px;color:var(--muted)}
+  #done pre{margin-top:20px;text-align:left;background:var(--wash);border-radius:10px;padding:12px;font-size:11.5px;white-space:pre-wrap;word-break:break-word;max-height:320px;overflow:auto}
+  footer{padding:18px 20px 26px;text-align:center;font-size:11.5px;color:var(--muted);border-top:1px solid var(--line);margin-top:12px}
+  .demo{display:block;margin-top:6px;color:#A0A0A6}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logobar" id="logobar" hidden></div>
+  <header id="banner">
+    <div class="brand" id="brand"></div>
+    <h1 id="bTitle"></h1>
+    <p id="bSub"></p>
+    <div class="rule" id="bRule"></div>
+  </header>
+
+  <main id="form">
+    <!-- Your details -->
+    <div class="card" data-q="name"><label class="lab" for="f-name">Full name <span class="req" style="color:var(--err)">*</span></label>
+      <input type="text" id="f-name" autocomplete="name"><div class="errmsg">Please enter your name</div></div>
+    <div class="card" data-q="code"><label class="lab" for="f-code">Employee code <span style="color:var(--err)">*</span></label>
+      <input type="text" id="f-code" autocapitalize="characters" autocomplete="off" placeholder="As on your ID card">
+      <div class="errmsg">Please enter your employee code</div></div>
+    <div class="card" data-q="phone"><label class="lab" for="f-phone">Phone <span style="color:var(--err)">*</span></label>
+      <input type="tel" id="f-phone" inputmode="numeric" autocomplete="tel" maxlength="20" placeholder="10 digits">
+      <div class="errmsg">Please enter a valid 10-digit mobile number</div></div>
+    <div class="card" data-q="city"><label class="lab" for="f-city">City <span style="color:var(--err)">*</span></label>
+      <select id="f-city"></select>
+      <div class="errmsg">Please choose your city</div></div>
+    <div class="card" data-q="branch"><label class="lab" for="f-branch">Branch <span style="color:var(--err)">*</span></label>
+      <select id="f-branch" disabled><option value="">Choose your city first</option></select>
+      <div class="errmsg">Please choose your branch</div></div>
+
+    <!-- Q1 -->
+    <div class="card" data-q="recv"><div class="qn">Q1</div><div class="qt">Have you received delivery of your uniforms? <span class="req">*</span></div>
+      <div class="ctl opts">
+        <label class="opt"><input type="radio" name="recv" value="Yes"> Yes</label>
+        <label class="opt"><input type="radio" name="recv" value="No"> No</label>
+      </div><div class="errmsg">Please choose one</div></div>
+
+    <!-- Q1 = No -->
+    <div id="b-notrecv" hidden>
+      <div class="card" data-q="reqcopy"><div class="qt">Upload a copy of your submission request</div>
+        <div class="help">The PDF you downloaded after submitting your uniform request, or a screenshot of the confirmation screen. Optional.</div>
+        <div class="ctl" data-upload="reqcopy" data-max="1" data-accept="image/*,application/pdf"></div></div>
+    </div>
+
+    <!-- Q1 = Yes -->
+    <div id="b-yes" hidden>
+      <div class="card" data-q="rating"><div class="qn">Q2</div><div class="qt">Rate the quality and delivery of the uniform <span class="req">*</span></div>
+        <div class="ctl scale">
+          <label><input type="radio" name="rating" value="1">1</label><label><input type="radio" name="rating" value="2">2</label>
+          <label><input type="radio" name="rating" value="3">3</label><label><input type="radio" name="rating" value="4">4</label>
+          <label><input type="radio" name="rating" value="5">5</label>
+        </div><div class="scale-ends"><span>Poor</span><span>Excellent</span></div><div class="errmsg">Please choose a rating</div></div>
+
+      <div class="card" data-q="product"><div class="qn">Q3</div><div class="qt">Did you receive the right product as per your request? <span class="req">*</span></div>
+        <div class="ctl opts">
+          <label class="opt"><input type="radio" name="product" value="Yes"> Yes</label>
+          <label class="opt"><input type="radio" name="product" value="No"> No</label>
+        </div><div class="errmsg">Please choose one</div></div>
+
+      <!-- Q3 = No -->
+      <div id="b-prod" hidden>
+        <div class="card" data-q="prodItems"><div class="qt">Tell us which items don't seem right <span class="req">*</span></div>
+          <div class="ctl opts">
+            <label class="opt"><input type="checkbox" name="prodItems" value="Top"> Top</label>
+            <div class="reveal" data-for="prodItems:Top" hidden><textarea data-desc="prodTop" maxlength="400" placeholder="e.g. Ordered Bow Tie Top but received Belt Tie Top"></textarea></div>
+            <label class="opt"><input type="checkbox" name="prodItems" value="Bottom"> Bottom</label>
+            <div class="reveal" data-for="prodItems:Bottom" hidden><textarea data-desc="prodBottom" maxlength="400" placeholder="e.g. Ordered Palazzo Pants but received Straight Trousers"></textarea></div>
+            <label class="opt"><input type="checkbox" name="prodItems" value="Dress"> Dress</label>
+            <div class="reveal" data-for="prodItems:Dress" hidden><textarea data-desc="prodDress" maxlength="400" placeholder="e.g. Ordered Mandarin Collar Dress but received Belt Tie Dress"></textarea></div>
+          </div><div class="errmsg">Tick at least one item, and describe the issue for each item you tick</div></div>
+        <div class="card" data-q="prodPhotos"><div class="qt">Upload images of the product that doesn't match <span class="req">*</span></div>
+          <div class="help">A clear photo of each item you received. Up to 5 photos.</div>
+          <div class="ctl" data-upload="prodPhotos" data-max="5" data-accept="image/*"></div><div class="errmsg">Please add at least one photo</div></div>
+        <div class="card" data-q="receipt1"><div class="qt">Upload your submission receipt</div>
+          <div class="help">The PDF you downloaded after submitting your uniform request, or a screenshot of the confirmation screen. Optional.</div>
+          <div class="ctl" data-upload="receipt1" data-max="1" data-accept="image/*,application/pdf"></div></div>
+      </div>
+
+      <!-- Q4 -->
+      <div class="card" data-q="size" id="q4" hidden><div class="qn">Q4</div><div class="qt">Have you received the size you asked for? <span class="req">*</span></div>
+        <div class="ctl opts">
+          <label class="opt"><input type="radio" name="size" value="All fit and sizing is perfect"> All fit and sizing is perfect</label>
+          <label class="opt"><input type="radio" name="size" value="Received wrong size"> Received wrong size</label>
+          <label class="opt"><input type="radio" name="size" value="Observed fit issues"> Observed fit issues</label>
+        </div><div class="errmsg">Please choose one</div></div>
+
+      <!-- Q4 = wrong size -->
+      <div id="b-size" hidden>
+        <div class="card" data-q="sizeItems"><div class="qt">Select the items that don't match your request <span class="req">*</span></div>
+          <div class="help">For each item: the product, the size you asked for, and the size you received.</div>
+          <div class="ctl opts">
+            <label class="opt"><input type="checkbox" name="sizeItems" value="Top"> Top</label>
+            <div class="reveal" data-for="sizeItems:Top" hidden><textarea data-desc="sizeTop" maxlength="400" placeholder="e.g. Bow Tie Top: asked for M, received L"></textarea></div>
+            <label class="opt"><input type="checkbox" name="sizeItems" value="Bottom"> Bottom</label>
+            <div class="reveal" data-for="sizeItems:Bottom" hidden><textarea data-desc="sizeBottom" maxlength="400" placeholder="e.g. Palazzo Pants: asked for M, received L"></textarea></div>
+            <label class="opt"><input type="checkbox" name="sizeItems" value="Dress"> Dress</label>
+            <div class="reveal" data-for="sizeItems:Dress" hidden><textarea data-desc="sizeDress" maxlength="400" placeholder="e.g. Flare Dress: asked for M, received L"></textarea></div>
+          </div><div class="errmsg">Tick at least one item, and describe the issue for each item you tick</div></div>
+        <div class="card" data-q="sizePhotos"><div class="qt">Upload images of the products where there's a size difference <span class="req">*</span></div>
+          <div class="help">Include the size label inside the garment. Up to 5 photos.</div>
+          <div class="ctl" data-upload="sizePhotos" data-max="5" data-accept="image/*"></div><div class="errmsg">Please add at least one photo</div></div>
+        <div class="card" data-q="alsoFit"><div class="qt">Any fit issues as well?</div><div class="help">Optional. e.g. Palazzo Pants are too long</div>
+          <div class="ctl"><textarea id="f-alsofit" maxlength="400"></textarea></div></div>
+      </div>
+
+      <!-- Q4 = fit issues -->
+      <div id="b-fit" hidden>
+        <div class="card" data-q="fit"><div class="qt">Describe the fit issue <span class="req">*</span></div>
+          <div class="help">Which product, and where it doesn't fit. e.g. Belt Tie Dress is tight at the waist</div>
+          <div class="ctl"><textarea id="f-fit" maxlength="500"></textarea></div><div class="errmsg">Please describe the fit issue</div></div>
+      </div>
+
+      <!-- receipt after Q4 issues (hidden if already uploaded in the product section) -->
+      <div id="b-receipt" hidden>
+        <div class="card" data-q="receipt2"><div class="qt">Upload your submission receipt</div>
+          <div class="help">The PDF you downloaded after submitting your uniform request, or a screenshot of the confirmation screen. Optional.</div>
+          <div class="ctl" data-upload="receipt2" data-max="1" data-accept="image/*,application/pdf"></div></div>
+      </div>
+    </div>
+
+    <!-- common ending -->
+    <div id="b-end" hidden>
+      <div class="card"><div class="qt">Any other comments</div>
+        <div class="ctl"><textarea id="f-comments" maxlength="600" placeholder="Optional"></textarea></div></div>
+      <div class="senderr" id="senderr" hidden></div>
+      <button class="btn" id="submit" type="button">Submit</button>
+      <p class="hint">Your response goes straight to the uniform team.</p>
+    </div>
+  </main>
+
+  <div id="done" hidden>
+    <div class="tick">&check;</div>
+    <h2>Thank you</h2>
+    <p id="doneText"></p>
+    <p class="ref">Reference <b id="refNo"></b></p>
+    <pre id="demoOut" hidden></pre>
+  </div>
+
+  <footer><span id="footerText"></span><span class="demo" id="demoNote" hidden>Demo mode: nothing is being sent.</span></footer>
+</div>
+
+<script>
+/* ============================== BANNER SETTINGS ==============================
+   Change any of these to customise the banner. Nothing else needs to be edited.
+
+   LOGO_URL        The Enrich logo. Currently ENRICH_LOGO, the logo built into this file (just above BANNER).
+                   To use a separate file instead, upload it to the same GitHub repository as this index.html
+                   and type its exact file name here (upper/lower case must match), e.g. 'enrich_logo.png'.
+                   The logo sits centred on a white strip above the dark banner (strip colour: --logo-bg
+                   in BRAND COLOURS). If the file is missing or misspelt, the built-in "en♥rich" wordmark
+                   is shown instead, so the page never shows a broken image.
+                   Leave '' to always use the built-in wordmark.
+   LOGO_HEIGHT     Height of the logo in pixels. 56 suits phones; try 48–72.
+   TAGLINE         Small text beside the built-in wordmark (not shown with the logo file, which has
+                   its own "love begins with you"). '' to hide it.
+   BANNER_IMAGE    Optional full background image for the banner (e.g. 'enrich_form_banner_bg.png').
+                   '' = plain background colour (--banner-bg in the BRAND COLOURS block in <style>).
+   TITLE           Big heading in the banner.
+   SUBTITLE        Line under the heading. '' to hide it.
+   SHOW_RED_RULE   true/false: the short red line under the banner text.
+   FOOTER          Text at the bottom of the page.
+   THANK_YOU_OK    Message after submitting when no problem was reported.
+   THANK_YOU_ISSUE Message after submitting when a problem was reported.
+   ============================================================================ */
+/* The Enrich logo, built into this file so no separate upload is needed.
+   To use an uploaded logo file instead, set LOGO_URL below to its file name, e.g. 'enrich_logo.png'. */
+const ENRICH_LOGO = 'data:image/png;base64,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';
+
+const BANNER = {
+  LOGO_URL: ENRICH_LOGO,
+  LOGO_HEIGHT: 56,
+  TAGLINE: 'love begins with you',
+  BANNER_IMAGE: '',
+  TITLE: 'Uniform delivery survey',
+  SUBTITLE: 'Your uniforms have been delivered. Tell us if you received the right products and sizes, so we can fix any problem quickly.',
+  SHOW_RED_RULE: true,
+  FOOTER: 'Enrich uniform programme',
+  THANK_YOU_OK: 'Glad everything arrived well. Your feedback helps us improve.',
+  THANK_YOU_ISSUE: 'The uniform team has your details and will contact you. Please keep the item unwashed, with its tags on, until then.'
+};
+
+/* ============================== CITIES AND BRANCHES ==========================
+   The City dropdown shows these cities; the Branch dropdown shows only the selected city's branches.
+   To add a branch: add a line '    'Branch name - City',' inside that city's list.
+   To add a city: copy one city block (name, colon, the [ ... ] list, comma) and edit it.
+   Keep the quotes and commas exactly as they are. Names are saved to the Sheet exactly as written here.
+   ============================================================================ */
+const CITY_BRANCHES = {
+  'Ahmedabad': [
+    'Bopal ambli - Ahmedabad',
+    'Hebatpur - Ahmedabad',
+    'Maninagar - Ahmedabad',
+    'Nikol - Ahmedabad',
+    'Prahlad Nagar - Ahmedabad',
+    'Satellite - Ahmedabad',
+    'Science City - Ahmedabad',
+    'Shahibaug - Ahmedabad',
+    'Shindhubhavan (shilip satved) - Ahmedabad',
+    'Shymal Circle - Ahmedabad',
+    'Sindhu Bhavan - Ahmedabad',
+    'Solitaire - Ahmedabad',
+    'South Bopal - Ahmedabad',
+    'Thaltej - Ahmedabad',
+    'University - Ahmedabad',
+    'University Area - Ahmedabad',
+    'Vastrapur - Ahmedabad',
+  ],
+  'Bengaluru': [
+    'AECS Layout - Bengaluru',
+    'Bannerghatta Road - Bengaluru',
+    'Bellandur - Bengaluru',
+    'HSR Layout - Bengaluru',
+    'Haralur Main Road - Bengaluru',
+    'Indira Nagar - Bengaluru',
+    'JP Nagar 5th Phase - Bengaluru',
+    'JP Nagar 7th Phase - Bengaluru',
+    'Jayanagar Ashoka Pillar - Bengaluru',
+    'K R Puram - Bengaluru',
+    'Kammanahalli - Bengaluru',
+    'Koramangala 4th Block - Bengaluru',
+    'Koramangala 8th Block - Bengaluru',
+    'R T Nagar - Bengaluru',
+    'RMZ Ecoworld - Bengaluru',
+    'Sadashiv Nagar - Bengaluru',
+  ],
+  'Gandhinagar': [
+    'Gandhinagar - Gandhinagar',
+    'Gandhinagar Sargasan - Gandhinagar',
+  ],
+  'Indore': [
+    'Indore Phoenix Citadel - Indore',
+  ],
+  'Mumbai': [
+    'ANdheri (W) Veera Desai Road - Mumbai',
+    'Airoli - Mumbai',
+    'Andheri (E) Marol Blue Fortuna - Mumbai',
+    'Andheri (E) Tandon Mall - Mumbai',
+    'Andheri (W) Four Bunglows - Mumbai',
+    'Andheri (W) Lokhandwala Link Palace - Mumbai',
+    'Andheri (W) Lokhandwala Silver Spring - Mumbai',
+    'Bandra (W) Hill Road - Mumbai',
+    'Bandra (W) Linking Road - Mumbai',
+    'Borivali (W) Factory Lane - Mumbai',
+    'Borivali (W) Satra Park - Mumbai',
+    'CBD Belapur - Mumbai',
+    'Chandivali Lake Homes - Mumbai',
+    'Chembur (E) Ambedkar Garden - Mumbai',
+    'Dombivali (E) Xperia Mall - Mumbai',
+    'Ghatkopar (E) Vikrant Circle - Mumbai',
+    'Goregaon (W) Kumud Nagar - Mumbai',
+    'Goregaon (W) Rustomjee Ozone - Mumbai',
+    'JVLR - Mumbai',
+    'Kalwa - Mumbai',
+    'Kalyan Khadakpada Godrej Hills - Mumbai',
+    'Kandivali (E) Dattani Park - Mumbai',
+    'Kandivali (E) Thakur Village - Mumbai',
+    'Kandivali (W) S V Road - Mumbai',
+    'Kemps Corner - Mumbai',
+    'Kharghar Patel Heritage - Mumbai',
+    'Kharghar Sec 34 A - Mumbai',
+    'Khoparkhairane Sec 14 - Mumbai',
+    'Kurla (W) Phoenix Mall - Mumbai',
+    'Lamington Road - Mumbai',
+    'Lower Parel Phoenix Palladium - Mumbai',
+    'Malad (W) Infiniti Mall - Mumbai',
+    'Malad (W) Inorbit Mall - Mumbai',
+    'Matunga Circle - Mumbai',
+    'Matunga Tulsi Pipe Road - Mumbai',
+    'Mira Road (E) Brahmadev Regency - Mumbai',
+    'Mira Road Delta Garden - Mumbai',
+    'Mulund (W) LBS Marg - Mumbai',
+    'Mulund (W) Runwal Greens - Mumbai',
+    'Parel Ashok Towers - Mumbai',
+    'Powai - Mumbai',
+    'Prabhadevi - Mumbai',
+    'Sanpada - Mumbai',
+    'Santacruz (W) Off S V Road - Mumbai',
+    'Seawoods - Mumbai',
+    'Sion Circle - Mumbai',
+    'Tardeo - Mumbai',
+    'Thane (W) Hiranandani Estate - Mumbai',
+    'Thane (W) Hiranandani Meadows - Mumbai',
+    'Thane (W) Lodha Amara - Mumbai',
+    'Thane (W) Panch Pakhdi - Mumbai',
+    'Thane (W) Viviana Mall - Mumbai',
+    'Tilak Nagar - Mumbai',
+    'Vashi Sector 17 - Mumbai',
+    'Vikhroli (E) - Mumbai',
+    'Vile Parle (W) S V Road - Mumbai',
+    'Virar (W) Global City - Mumbai',
+  ],
+  'Pimpri-Chinchwad': [
+    'Wakad - Pimpri-Chinchwad',
+  ],
+  'Pune': [
+    'Aundh Pushpak Park - Pune',
+    'Kharadi - Pune',
+    'Koregaon Park - Pune',
+    'Mukund Nagar - Pune',
+    'NIBM Tribeca Highstreet - Pune',
+    'Pimple Saudagar - Pune',
+    'Viman Nagar Phoenix Mall - Pune',
+    'Wanowrie - Pune',
+  ],
+  'Shantigram': [
+    'Adani Shantigram - Shantigram',
+  ],
+  'Surat': [
+    'Canal Road Vesu - Surat',
+    'Lal Bungalow - Surat',
+    'Mota Varacha - Surat',
+    'Wood Square - Surat',
+  ],
+  'Vadodara': [
+    'Alkapuri - Vadodara',
+    'Bhayli - Vadodara',
+    'Gotri - Vadodara',
+    'Inorbit Mall - Vadodara',
+    'Manjalpur Eva Mall - Vadodara',
+    'OP Road - Vadodara',
+  ]
+};
+
+/* ============================== CONNECTION ================================== */
+const ENDPOINT = 'https://script.google.com/macros/s/AKfycbz7nQD0gM7sknExb2b5LggUurkAF77F7q1T877DnljPter9MljDj0sas1Jy2Qp8OZdXjw/exec';   // Apps Script Web App URL (Deploy > Manage deployments)
+const MAX_PDF_MB = 5;                               // largest receipt PDF accepted
+/* ============================================================================ */
+
+const DEMO = ENDPOINT.indexOf('PASTE_') === 0;
+const $ = id => document.getElementById(id);
+
+/* ---- banner ---- */
+(function(){
+  const b = BANNER;
+  const wordmark = () => { $('logobar').hidden = true;
+    $('brand').innerHTML = `<span class="wordmark">en<b>&#10084;</b>rich</span>` + (b.TAGLINE ? `<span class="tagline">${b.TAGLINE}</span>` : ''); };
+  if (b.LOGO_URL){
+    $('logobar').hidden = false; $('brand').hidden = true;
+    const img = new Image(); img.alt = 'Enrich'; img.style.height = (Number(b.LOGO_HEIGHT) || 56) + 'px';
+    img.onerror = () => { $('brand').hidden = false; wordmark(); };   // logo file missing: fall back to the wordmark
+    img.src = b.LOGO_URL; $('logobar').appendChild(img);
+  } else wordmark();
+  if (b.BANNER_IMAGE){ $('banner').style.backgroundImage = `url('${b.BANNER_IMAGE}')`; $('banner').classList.add('has-image'); }
+  $('bTitle').textContent = b.TITLE;
+  $('bSub').textContent = b.SUBTITLE; $('bSub').hidden = !b.SUBTITLE;
+  $('bRule').hidden = !b.SHOW_RED_RULE;
+  $('footerText').textContent = b.FOOTER;
+  if (DEMO) $('demoNote').hidden = false;
+})();
+
+/* ---- city and branch dropdowns ---- */
+(function(){
+  const city = $('f-city'), branch = $('f-branch');
+  city.innerHTML = '<option value="">Select your city</option>' +
+    Object.keys(CITY_BRANCHES).map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+  city.addEventListener('change', () => {
+    const list = CITY_BRANCHES[city.value] || [];
+    branch.innerHTML = list.length ? '<option value="">Select your branch</option>' + list.map(x => `<option value="${esc(x)}">${esc(x)}</option>`).join('')
+                                   : '<option value="">Choose your city first</option>';
+    branch.disabled = !list.length;
+    if (list.length === 1) branch.value = list[0];   // only one branch in this city: pick it
+  });
+})();
+function phoneDigits(){ let d = $('f-phone').value.replace(/\D/g, ''); if (d.length === 12 && d.indexOf('91') === 0) d = d.slice(2); if (d.length === 11 && d[0] === '0') d = d.slice(1); return d; }
+
+/* ---- uploads ---- */
+const FILES = {};   // key -> [{name, type, data(base64 dataURL), preview}]
+document.querySelectorAll('[data-upload]').forEach(box => {
+  const key = box.dataset.upload, max = Number(box.dataset.max);
+  FILES[key] = [];
+  box.innerHTML = `<label class="up">&#8679; Add ${max > 1 ? 'photos' : 'file'}<input type="file" accept="${box.dataset.accept}" ${max > 1 ? 'multiple' : ''}></label>
+    <div class="files"></div><div class="limit">${max > 1 ? 'Up to ' + max + ' photos' : '1 file: PDF or image (PDF up to ' + MAX_PDF_MB + ' MB)'}</div>`;
+  const input = box.querySelector('input'), list = box.querySelector('.files');
+  const draw = () => {
+    list.innerHTML = FILES[key].map((f, i) => `<div class="thumb">${f.preview ? `<img src="${f.preview}" alt="">` : 'PDF<br>' + esc(f.name.slice(0, 18))}<button type="button" data-rm="${i}" aria-label="Remove">&times;</button></div>`).join('');
+    box.querySelector('.up').style.display = FILES[key].length >= max ? 'none' : '';
+    onChange();
+  };
+  list.addEventListener('click', e => { const b = e.target.closest('[data-rm]'); if (b){ FILES[key].splice(Number(b.dataset.rm), 1); draw(); } });
+  input.addEventListener('change', async () => {
+    for (const file of [...input.files]){
+      if (FILES[key].length >= max) break;
+      if (file.type === 'application/pdf'){
+        if (file.size > MAX_PDF_MB * 1048576){ alert('That PDF is larger than ' + MAX_PDF_MB + ' MB. Please upload a screenshot instead.'); continue; }
+        FILES[key].push({name:file.name, type:file.type, data: await readAsDataURL(file), preview:null});
+      } else if (file.type.indexOf('image/') === 0){
+        const data = await compress(file);
+        FILES[key].push({name:file.name.replace(/\.[^.]+$/, '') + '.jpg', type:'image/jpeg', data, preview:data});
+      }
+    }
+    input.value = ''; draw();
+    box.closest('.card').classList.remove('err');
+  });
+});
+function readAsDataURL(file){ return new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(file); }); }
+function compress(file){        // shrinks phone photos to ~1600px JPEG so uploads are fast on mobile data
+  return new Promise(resolve => {
+    const img = new Image();
+    readAsDataURL(file).then(u => { img.src = u; });
+    img.onload = () => {
+      const s = Math.min(1, 1600 / Math.max(img.width, img.height));
+      const c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      resolve(c.toDataURL('image/jpeg', 0.75));
+    };
+  });
+}
+function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* ---- progressive logic ---- */
+const val = name => (document.querySelector(`input[name="${name}"]:checked`) || {}).value || '';
+const vals = name => [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(i => i.value);
+function onChange(){
+  const recv = val('recv'), product = val('product'), size = val('size');
+  $('b-notrecv').hidden = recv !== 'No';
+  $('b-yes').hidden = recv !== 'Yes';
+  $('b-prod').hidden = product !== 'No';
+  $('q4').hidden = !product;
+  $('b-size').hidden = size !== 'Received wrong size';
+  $('b-fit').hidden = size !== 'Observed fit issues';
+  const q4Issue = size === 'Received wrong size' || size === 'Observed fit issues';
+  const receiptAlready = product === 'No' && FILES.receipt1 && FILES.receipt1.length > 0;
+  $('b-receipt').hidden = !q4Issue || receiptAlready;
+  document.querySelectorAll('.reveal').forEach(r => {
+    const [name, item] = r.dataset.for.split(':');
+    r.hidden = !vals(name).includes(item);
+  });
+  $('b-end').hidden = !(recv === 'No' || (recv === 'Yes' && size));
+}
+document.getElementById('form').addEventListener('change', e => { const c = e.target.closest('.card'); if (c) c.classList.remove('err'); onChange(); });
+document.getElementById('form').addEventListener('input', e => { const c = e.target.closest('.card'); if (c) c.classList.remove('err'); });
+
+/* ---- validation ---- */
+function check(){
+  const bad = [];
+  const mark = (q, cond) => { const el = document.querySelector(`[data-q="${q}"]`); el.classList.toggle('err', cond); if (cond) bad.push(el); };
+  mark('name', !$('f-name').value.trim());
+  mark('code', !$('f-code').value.trim());
+  mark('phone', !/^[6-9]\d{9}$/.test(phoneDigits()));
+  mark('city', !$('f-city').value);
+  mark('branch', !$('f-branch').value);
+  const recv = val('recv'); mark('recv', !recv);
+  if (recv === 'Yes'){
+    mark('rating', !val('rating'));
+    const product = val('product'); mark('product', !product);
+    if (product === 'No'){
+      const items = vals('prodItems');
+      mark('prodItems', !items.length || items.some(i => !document.querySelector(`[data-desc="prod${i}"]`).value.trim()));
+      mark('prodPhotos', !FILES.prodPhotos.length);
+    }
+    if (product){
+      const size = val('size'); mark('size', !size);
+      if (size === 'Received wrong size'){
+        const items = vals('sizeItems');
+        mark('sizeItems', !items.length || items.some(i => !document.querySelector(`[data-desc="size${i}"]`).value.trim()));
+        mark('sizePhotos', !FILES.sizePhotos.length);
+      }
+      if (size === 'Observed fit issues') mark('fit', !$('f-fit').value.trim());
+    }
+  }
+  if (bad.length) bad[0].scrollIntoView({behavior:'smooth', block:'center'});
+  return !bad.length;
+}
+
+/* ---- build + send ---- */
+function desc(prefix, name){ const o = {}; vals(name).forEach(i => o[i] = document.querySelector(`[data-desc="${prefix}${i}"]`).value.trim()); return o; }
+function payload(ref){
+  const recv = val('recv'), product = val('product'), size = val('size');
+  const p = {ref, name:$('f-name').value.trim(), empCode:$('f-code').value.trim().toUpperCase(), phone:phoneDigits(), city:$('f-city').value, branch:$('f-branch').value, received:recv, comments:$('f-comments').value.trim(), files:{}};
+  const files = keys => keys.flatMap(k => !document.querySelector(`[data-upload="${k}"]`).closest('[hidden]') ? FILES[k] : [])
+                            .map(f => ({name:f.name, type:f.type, data:f.data}));
+  if (recv === 'No'){ p.files.receipt = files(['reqcopy']); return p; }
+  p.rating = Number(val('rating'));
+  p.rightProduct = product;
+  if (product === 'No'){ p.productItems = vals('prodItems'); p.productDesc = desc('prod', 'prodItems'); p.files.productPhotos = files(['prodPhotos']); }
+  p.sizeFit = size;
+  if (size === 'Received wrong size'){ p.sizeItems = vals('sizeItems'); p.sizeDesc = desc('size', 'sizeItems'); p.files.sizePhotos = files(['sizePhotos']); p.fitIssue = $('f-alsofit').value.trim(); }
+  if (size === 'Observed fit issues') p.fitIssue = $('f-fit').value.trim();
+  p.files.receipt = files(['receipt1', 'receipt2']);
+  return p;
+}
+
+$('submit').addEventListener('click', async () => {
+  if (!check()) return;
+  const ref = 'E' + Date.now().toString(36).toUpperCase().slice(-6);
+  const data = payload(ref);
+  const btn = $('submit'); btn.disabled = true; btn.textContent = 'Sending…'; $('senderr').hidden = true;
+  let ok = false;
+  try {
+    if (DEMO){ await new Promise(r => setTimeout(r, 600)); ok = true; }
+    else {
+      const res = await fetch(ENDPOINT, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(data)});
+      ok = (await res.json()).ok === true;
+    }
+  } catch (e) { ok = false; }
+  btn.disabled = false; btn.textContent = 'Submit';
+  if (!ok){ $('senderr').hidden = false; $('senderr').textContent = 'That didn\'t go through. Please check your internet connection and tap Submit again.'; return; }
+  const issue = data.received === 'No' || data.rightProduct === 'No' || (data.sizeFit && data.sizeFit !== 'All fit and sizing is perfect');
+  $('doneText').textContent = issue ? BANNER.THANK_YOU_ISSUE : BANNER.THANK_YOU_OK;
+  $('refNo').textContent = ref;
+  if (DEMO){
+    const show = JSON.parse(JSON.stringify(data));
+    Object.keys(show.files).forEach(k => show.files[k] = show.files[k].map(f => f.name));
+    $('demoOut').hidden = false; $('demoOut').textContent = 'DEMO — this would be saved:\n' + JSON.stringify(show, null, 2);
+  }
+  $('form').hidden = true; $('done').hidden = false; window.scrollTo(0, 0);
+});
+onChange();
+</script>
+</body>
+</html>
